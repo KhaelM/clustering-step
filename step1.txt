@@ -1,0 +1,39 @@
+Say we have 4 computers:
+pc1: 192.168.1.12 ==> pc1 have haproxy and Apache installed (Ubuntu)
+pc2: 192.168.1.13 ==> pc2 only have Apache (Windows)
+pc3: 192.168.1.14 ==> pc3 only have Apache (Mac)
+pc4: 192.168.1.15 ==> pc4 only have Apache (Ubuntu)
+
+add to /etc/haproxy/haproxy.cfg in pc1:
+
+    frontend Local_Server
+        bind 192.168.1.12:81 #we use port 81 to avoid 80 which runs Apache
+        mode http
+        default_backend My_Web_Servers
+
+    backend My_Web_Servers
+        mode http
+        balance roundrobin #roundrobin allows to switch between server from pc2 to pc4 then loop again
+        option forwardfor
+        http-request set-header X-Forwarded-Port %[dst_port]
+        http-request add-header X-Forwarded-Proto https if { ssl_fc }
+        option httpchk HEAD / HTTP/1.1rnHost:localhost
+        server pc2  192.168.1.13:80
+        server pc3  192.168.1.14:80
+        server pc4  192.168.1.15:80
+
+check if the config is valid:
+    haproxy -c -f /etc/haproxy/haproxy.cfg
+
+Restart haproxy:
+    sudo service haproxy restart
+
+Create a step1.php in each server for user:
+    <?php
+        echo "server{serverNumber}";
+    ?>
+
+Open haproxy server as url:
+    http://192.168.1.12:81/step1.php
+
+If everything is ok, user's response should alway be different for each refresh

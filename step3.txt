@@ -1,0 +1,59 @@
+ We'll use mariadb (mysql fork)
+To avoid problem, the version should be the same
+
+Say we have 2 computer with xampp installed :
+pc1: 192.168.88.10 ==> Master (Ubuntu)
+pc2: 192.168.88.61 ==> Slave1 (Windows 10)
+
+Master config:
+    Add to mariadb config (/opt/lampp/etc/my.cnf on Ubuntuor D:\Server\mysql\bin\my.ini on Windows 10)
+    under [mysqld] section:
+        server-id = 1
+        log-bin=master-bin
+        log-bin-index=master-bin.index
+
+        comment using # bin-address=blabla if not commented to avoid listening on specific address
+
+    restart xampp mariadb
+        Ubuntu:
+            sudo ./xampp stopmysql
+            sudo ./xampp startmysql
+        
+        Windows 10:
+            Open xampp control as admin and stop, then start mysql then open a shell
+
+        mysql -u root
+        create user 'replica'@'%' identified by 'password';
+        GRANT REPLICATION SLAVE ON *.* TO 'replica'@'%';
+	GRANT all privileges ON *.* TO 'replica'@'%';
+        FLUSH PRIVILEGES;
+        show master status;
+        keep note of information
+
+Slaves config:
+    Edit mariadb config as master but with other server-id, for example here:
+        server-id = 2
+
+    Restart xampp mariadb as admin
+    
+    mysql -u root
+    stop slave;
+
+    enter next command with correct information:
+        CHANGE MASTER TO MASTER_HOST = '192.168.43.240',
+        MASTER_USER = 'replica',
+        MASTER_PASSWORD = 'password',
+        MASTER_LOG_FILE = 'master-bin.000003',
+        MASTER_LOG_POS = 763;
+
+        (If there is a problem with slave, enter: RESET SLAVE ALL;) ==> this command deletes every slave
+
+    start slave;
+    
+    to check if there is no error:
+        show slave status;
+
+
+disconnect both master and slave from mysql then reconnect Master to mysql
+
+create new database, connect slave to mysql and the previous database should appear

@@ -1,0 +1,30 @@
+Step 1(swap):
+    Alternates between server when user makes a request
+
+Step 2(session stickiness):
+    As long as there is a session on a defined server, the user request should always be redirected to this server
+    otherwise it switches to another one
+
+Step 3: (Database backup)
+    Master:
+    Slave1
+    Slave2
+
+If an edit is performed inside Master (database creation, table creation), it should be propagated to the slaves
+Slaves 'select' request should return the same data as the Master
+
+Step 4:
+    Master1 - Master2
+
+Each edit made to Master1 should also edit Master2 contents and vice versa
+
+Step 5:
+            Ha Proxy
+            (Http)
+        /       |           \
+    Server1     Server2     Server3
+                |
+            HaProxy
+            (Database - TCP)
+        /       |           \
+    Database1    Database2  Database3
